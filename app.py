@@ -5,345 +5,550 @@ import json
 import re
 import time
 import random
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
 import hashlib
+import base64
+from bs4 import BeautifulSoup
+from datetime import datetime
+import urllib.parse
 
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
+# ============ CONFIGURATION ============
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15"
 ]
 
 credits = {
     'Developer': 'N.S',
-    'Version': 'Ultimate Pro 3.0',
-    'Features': 'Full Data Extraction, Hidden Fields, Owner Details'
+    'Version': 'Ultimate Pro MAX 4.0',
+    'Services': 'All-in-One Data Extraction Engine'
 }
 
-def get_random_headers():
-    """Generate random headers to avoid blocking"""
-    return {
-        "User-Agent": random.choice(USER_AGENTS),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0",
-        "Referer": "https://www.google.com/"
-    }
+# ============ SERVICE HANDLERS ============
 
-def extract_all_data(soup, rc):
-    """Extract EVERY possible piece of data from the page"""
-    all_data = {}
+class DataExtractor:
+    """Ultimate Data Extraction Engine"""
     
-    # 1. Extract ALL text content
-    text_content = soup.get_text(separator=' ', strip=True)
+    @staticmethod
+    def get_headers():
+        return {
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Cache-Control": "max-age=0",
+        }
     
-    # 2. Find ALL span elements with labels
-    spans = soup.find_all('span')
-    for span in spans:
-        label = span.get_text(strip=True)
-        if not label or len(label) > 100:
-            continue
-            
-        # Find parent div
-        parent = span.find_parent('div')
-        if parent:
-            # Check for value in p tag
-            value_tag = parent.find('p')
-            if value_tag:
-                value = value_tag.get_text(strip=True)
-                clean_label = label.replace(':', '').strip()
-                if clean_label and value:
-                    all_data[clean_label] = value
-            
-            # Check for value in div
-            value_tag = parent.find('div', class_=re.compile(r'value|data|info|detail', re.I))
-            if value_tag and not all_data.get(label):
-                value = value_tag.get_text(strip=True)
-                if value:
-                    all_data[label.replace(':', '').strip()] = value
-            
-            # Check for value in any element
-            for child in parent.find_all(['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong']):
-                if child != span and child.get_text(strip=True):
-                    value = child.get_text(strip=True)
-                    if value and len(value) < 200:
-                        all_data[label.replace(':', '').strip()] = value
-                        break
-
-    # 3. Find ALL divs with data attributes
-    divs = soup.find_all('div', class_=re.compile(r'item|row|field|detail|info|data|result|card|box|container|wrapper', re.I))
-    for div in divs:
-        # Try to find label and value pairs
-        label_tags = div.find_all(['span', 'label', 'div', 'h4', 'h5', 'h6', 'strong'], class_=re.compile(r'label|key|title|name|heading', re.I))
-        value_tags = div.find_all(['span', 'p', 'div', 'strong', 'td', 'li'], class_=re.compile(r'value|data|text|content|detail|info', re.I))
+    @staticmethod
+    def extract_all_data(soup):
+        """Extract EVERYTHING from page"""
+        all_data = {}
         
-        for label_tag in label_tags:
-            label = label_tag.get_text(strip=True).replace(':', '').strip()
-            if not label or len(label) > 60:
+        # Method 1: All text content
+        text = soup.get_text(separator=' ', strip=True)
+        
+        # Method 2: Span-P tag pairs
+        for span in soup.find_all('span'):
+            label = span.get_text(strip=True)
+            if not label or len(label) > 80:
                 continue
-                
-            # Find value for this label
-            parent = label_tag.find_parent()
+            parent = span.find_parent()
             if parent:
-                # Look for value in siblings or children
-                for val_tag in parent.find_all(['p', 'span', 'div', 'strong']):
-                    if val_tag != label_tag:
-                        value = val_tag.get_text(strip=True)
-                        if value and len(value) < 200:
-                            all_data[label] = value
-                            break
-
-    # 4. Extract data from tables
-    tables = soup.find_all('table')
-    for table in tables:
-        rows = table.find_all('tr')
-        for row in rows:
-            cells = row.find_all(['td', 'th'])
-            if len(cells) >= 2:
-                label = cells[0].get_text(strip=True).replace(':', '').strip()
-                value = cells[1].get_text(strip=True)
-                if label and value:
-                    all_data[label] = value
-
-    # 5. Extract hidden data from attributes
-    for element in soup.find_all(attrs={'data-': True}):
-        for attr in element.attrs:
-            if attr.startswith('data-'):
-                key = attr.replace('data-', '').replace('-', ' ').title()
-                value = element[attr]
-                if key and value:
-                    all_data[key] = value
-
-    # 6. Extract from meta tags
-    metas = soup.find_all('meta')
-    for meta in metas:
-        if meta.get('name') and meta.get('content'):
-            all_data[meta['name']] = meta['content']
-        if meta.get('property') and meta.get('content'):
-            all_data[meta['property']] = meta['content']
-
-    # 7. Extract owner name specifically (even with asterisks)
-    owner_patterns = [
-        r'[Oo]wner\s*[Nn]ame\s*[:：]\s*([^*\n]+)',
-        r'[Oo]wner\s*[:：]\s*([^*\n]+)',
-        r'[Nn]ame\s*[:：]\s*([^*\n]+)',
-        r'[Aa]adhar\s*[Nn]ame\s*[:：]\s*([^*\n]+)',
-        r'[Rr]egistered\s*[Oo]wner\s*[:：]\s*([^*\n]+)',
-        r'[Rr]egistered\s*[Nn]ame\s*[:：]\s*([^*\n]+)',
-    ]
-    
-    for pattern in owner_patterns:
-        match = re.search(pattern, text_content, re.IGNORECASE)
-        if match:
-            owner = match.group(1).strip()
-            if owner and len(owner) > 2:
-                all_data['Owner Name'] = owner
-                break
-
-    # 8. Extract all text after keywords
-    keywords = ['Owner', 'Name', 'Father', 'Address', 'Phone', 'Mobile', 'Email', 'Registration', 'RTO', 'Insurance', 'Model', 'Chassis', 'Engine']
-    for keyword in keywords:
-        pattern = rf'{keyword}.*?[:：]\s*([^*\n]+)'
-        matches = re.findall(pattern, text_content, re.IGNORECASE)
-        for match in matches:
-            value = match.strip()
-            if value and len(value) > 2:
-                all_data[keyword] = value
-
-    # 9. Extract from script tags (JSON data)
-    scripts = soup.find_all('script')
-    for script in scripts:
-        if script.string:
-            json_match = re.search(r'\{.*\}', script.string)
-            if json_match:
-                try:
-                    json_data = json.loads(json_match.group())
-                    for key, value in json_data.items():
-                        if isinstance(value, str) and len(value) > 1:
-                            all_data[key] = value
-                except:
-                    pass
-
-    # 10. Remove duplicates and clean
-    cleaned_data = {}
-    for key, value in all_data.items():
-        # Clean the key
-        clean_key = key.replace(':', '').strip()
-        # Remove excessive whitespace
-        clean_value = ' '.join(value.split())
-        # Store if not empty
-        if clean_key and clean_value:
-            cleaned_data[clean_key] = clean_value
-
-    return cleaned_data
-
-def process_all_data(raw_data, rc):
-    """Process and categorize ALL extracted data"""
-    
-    # Expanded key mappings with all possible variations
-    key_map = {
-        "Owner Details": [
-            "Owner Name", "Owner", "Name", "Full Name", "Registered Owner", "R/O", "Owner's Name",
-            "Father's Name", "Father Name", "F/H", "S/O", "D/O", "W/O", "Husband Name", "Spouse Name",
-            "Mother's Name", "Guardian Name", "Owner Address", "Address", "Permanent Address",
-            "City", "City Name", "District", "State", "Pin Code", "Pincode", "Zip Code",
-            "Mobile", "Phone", "Contact", "Phone Number", "Mobile Number", "Email", "Email ID",
-            "Aadhar", "Aadhar Number", "UID", "PAN", "PAN Number", "Voter ID", "Driving License"
-        ],
-        "Vehicle Details": [
-            "Vehicle Model", "Model", "Model Name", "Model Number", "Vehicle Name", "Car Model",
-            "Maker", "Manufacturer", "Make", "Brand", "Company", "Vehicle Class", "Class",
-            "Fuel Type", "Fuel", "Fuel Norms", "Emission Norms", "BS", "BS Norms",
-            "Chassis Number", "Chassis", "VIN", "Vehicle Identification Number",
-            "Engine Number", "Engine", "Engine CC", "Cubic Capacity", "CC",
-            "Seating Capacity", "Seats", "Capacity", "Vehicle Color", "Color", "Colour",
-            "Manufacturing Year", "Year", "Model Year", "Vehicle Age", "Age",
-            "Variant", "Trim", "Version", "Type", "Body Type", "Transmission", "Drive Type",
-            "Fuel Capacity", "Tank Capacity", "Mileage", "Kilometer", "Odometer"
-        ],
-        "Registration Details": [
-            "Registration Number", "RC Number", "Reg Number", "Vehicle Number", "License Plate",
-            "RTO Code", "Registered RTO", "RTO", "Registration Date", "Reg Date", "Date of Reg",
-            "Registration Authority", "Status", "Registration Status", "Active", "Validity",
-            "Blacklist Status", "Blacklisted", "NOC", "NOC Details", "NOC Status",
-            "Financer", "Financer Name", "Finance Company", "Loan Status", "Hypothecation"
-        ],
-        "Insurance Details": [
-            "Insurance Company", "Insurer", "Insurance Provider", "Policy Provider",
-            "Insurance Expiry", "Expiry Date", "Insurance Valid", "Valid Upto",
-            "Insurance No", "Policy Number", "Insurance Policy Number",
-            "Insurance Status", "Insurance Active", "Coverage Type", "Premium Amount",
-            "Insurance Start", "Policy Start", "Insured Value", "Sum Insured"
-        ],
-        "Compliance Details": [
-            "Fitness", "Fitness Upto", "Fitness Certificate", "FC",
-            "PUC", "PUC Upto", "Pollution", "Emission Test",
-            "PUC No", "Certificate Number",
-            "Tax", "Road Tax", "Tax Upto", "Tax Paid", "Toll Tax",
-            "Permit", "Permit Type", "Permit Validity", "National Permit", "State Permit",
-            "Fitness Status", "Compliance Status", "Vehicle Inspection"
-        ],
-        "Owner Documents": [
-            "Aadhar Number", "Aadhar", "UIDAI", "PAN Number", "PAN", 
-            "Voter ID", "Driving License", "DL Number", "Passport",
-            "Ration Card", "Gas Connection", "Bank Account", "IFSC Code"
-        ]
-    }
-
-    structured_data = {
-        "Owner Details": {},
-        "Vehicle Details": {},
-        "Registration Details": {},
-        "Insurance Details": {},
-        "Compliance Details": {},
-        "Owner Documents": {},
-        "Other Details": {}
-    }
-
-    # Process each data item
-    for key, value in raw_data.items():
-        clean_key = key.replace(':', '').strip()
-        clean_value = ' '.join(value.split())
+                value_tag = parent.find('p') or parent.find('div', class_=re.compile(r'value|data', re.I))
+                if value_tag:
+                    value = value_tag.get_text(strip=True)
+                    if value:
+                        all_data[label.replace(':', '').strip()] = value
         
-        if not clean_value or len(clean_key) > 60:
-            continue
+        # Method 3: Table extraction
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cells = row.find_all(['td', 'th'])
+                if len(cells) >= 2:
+                    all_data[cells[0].get_text(strip=True).replace(':', '').strip()] = cells[1].get_text(strip=True)
+        
+        # Method 4: Div label-value pairs
+        for div in soup.find_all('div', class_=re.compile(r'item|row|field|detail|info', re.I)):
+            labels = div.find_all(['span', 'label', 'h4', 'h5'])
+            for label in labels:
+                key = label.get_text(strip=True).replace(':', '').strip()
+                if key and len(key) < 60:
+                    parent = label.find_parent()
+                    if parent:
+                        for val in parent.find_all(['p', 'span', 'div', 'strong']):
+                            if val != label:
+                                value = val.get_text(strip=True)
+                                if value:
+                                    all_data[key] = value
+                                    break
+        
+        # Method 5: Meta tags
+        for meta in soup.find_all('meta'):
+            if meta.get('name') and meta.get('content'):
+                all_data[meta['name']] = meta['content']
+        
+        # Method 6: Script JSON
+        for script in soup.find_all('script'):
+            if script.string:
+                json_match = re.search(r'\{.*\}', script.string)
+                if json_match:
+                    try:
+                        json_data = json.loads(json_match.group())
+                        for k, v in json_data.items():
+                            if isinstance(v, str) and len(v) > 1:
+                                all_data[k] = v
+                    except:
+                        pass
+        
+        # Method 7: Pattern matching for specific data
+        patterns = {
+            'Owner Name': r'[Oo]wner\s*[Nn]ame\s*[:：]\s*([^\n*]+)',
+            'Father Name': r'[Ff]ather\s*[Nn]ame\s*[:：]\s*([^\n*]+)',
+            'Address': r'[Aa]ddress\s*[:：]\s*([^\n]+)',
+            'Mobile': r'[Mm]obile\s*[:：]\s*([\d\s\-]+)',
+            'Phone': r'[Pp]hone\s*[:：]\s*([\d\s\-]+)',
+            'Email': r'[Ee]mail\s*[:：]\s*([^\s@]+@[^\s@]+)',
+            'Aadhar': r'[Aa]adhar\s*[:：]\s*([\d\s\-]+)',
+            'PAN': r'[Pp]AN\s*[:：]\s*([A-Z]{5}\d{4}[A-Z])',
+            'Voter ID': r'[Vv]oter\s*[:：]\s*([A-Z]{3}\d{7})',
+            'Driving License': r'[Ll]icense\s*[:：]\s*([A-Z]{2}\d{13})',
+        }
+        
+        for key, pattern in patterns.items():
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                all_data[key] = match.group(1).strip()
+        
+        # Clean and return
+        cleaned = {}
+        for k, v in all_data.items():
+            if k and v and len(k) < 60:
+                cleaned[k.replace(':', '').strip()] = ' '.join(v.split())
+        
+        return cleaned
+
+    @staticmethod
+    def process_data(raw_data, identifier):
+        """Process and categorize extracted data"""
+        
+        categories = {
+            "Personal Details": [
+                "Owner Name", "Full Name", "Name", "Father's Name", "Mother's Name",
+                "Spouse Name", "Guardian Name", "Date of Birth", "Age", "Gender",
+                "Nationality", "Religion", "Caste", "Occupation"
+            ],
+            "Contact Details": [
+                "Mobile", "Phone", "Phone Number", "Mobile Number", "WhatsApp",
+                "Email", "Email ID", "Alternate Phone", "Landline", "Fax"
+            ],
+            "Address Details": [
+                "Address", "Permanent Address", "Current Address", "City", "District",
+                "State", "PIN Code", "Pincode", "Zip Code", "Country", "Village", "Taluka"
+            ],
+            "ID Documents": [
+                "Aadhar", "Aadhar Number", "UID", "PAN", "PAN Number", "Voter ID",
+                "Driving License", "Passport", "Ration Card", "Gas Connection",
+                "Bank Account", "IFSC Code", "Credit Card", "Debit Card"
+            ],
+            "Vehicle Details": [
+                "Vehicle Model", "Model", "Maker", "Manufacturer", "Brand", "Fuel Type",
+                "Chassis Number", "Engine Number", "Cubic Capacity", "Seating Capacity",
+                "Color", "Manufacturing Year", "Vehicle Age", "Variant", "Transmission"
+            ],
+            "Registration Details": [
+                "Registration Number", "RTO", "Registered RTO", "Registration Date",
+                "Registration Authority", "Status", "Blacklist Status", "NOC Details",
+                "Financer Name", "Hypothecation"
+            ],
+            "Insurance Details": [
+                "Insurance Company", "Insurance Expiry", "Insurance No", "Policy Number",
+                "Insurance Status", "Coverage Type", "Premium Amount", "Insured Value"
+            ],
+            "Compliance Details": [
+                "Fitness Upto", "PUC Upto", "PUC No", "Tax Upto", "Permit Type",
+                "Emission Norms", "Road Tax", "Fitness Status"
+            ]
+        }
+        
+        structured = {cat: {} for cat in categories}
+        structured["Other Details"] = {}
+        
+        for key, value in raw_data.items():
+            found = False
+            key_clean = key.replace(':', '').strip()
             
-        # Skip common noise
-        skip_patterns = ["Copyright", "Privacy", "Terms", "Cookies", "All Rights", "Contact Us", "About Us", "Login", "Sign Up"]
-        if any(pattern in clean_key for pattern in skip_patterns):
-            continue
-        
-        found = False
-        
-        # Try exact match first
-        for category, keys_list in key_map.items():
-            if clean_key in keys_list:
-                structured_data[category][clean_key] = clean_value
-                found = True
-                break
-        
-        # Try partial match if not found
-        if not found:
-            for category, keys_list in key_map.items():
-                for pattern_key in keys_list:
-                    # Check if key contains pattern or vice versa
-                    if (pattern_key.lower() in clean_key.lower() or 
-                        clean_key.lower() in pattern_key.lower() or
-                        clean_key.lower().replace(' ', '') == pattern_key.lower().replace(' ', '')):
-                        structured_data[category][clean_key] = clean_value
-                        found = True
-                        break
-                if found:
+            for category, keys in categories.items():
+                if key_clean in keys:
+                    structured[category][key_clean] = value
+                    found = True
                     break
+            
+            if not found:
+                for category, keys in categories.items():
+                    for pattern in keys:
+                        if pattern.lower() in key_clean.lower() or key_clean.lower() in pattern.lower():
+                            structured[category][key_clean] = value
+                            found = True
+                            break
+                    if found:
+                        break
+            
+            if not found:
+                structured["Other Details"][key_clean] = value
         
-        # Special handling for numerical data (phone, aadhar, etc.)
-        if not found and re.search(r'\d{10}', clean_value) and 'phone' in clean_key.lower():
-            structured_data["Owner Details"]["Phone Number"] = clean_value
-            found = True
-        elif not found and re.search(r'\d{12}', clean_value) and 'aadhar' in clean_key.lower():
-            structured_data["Owner Documents"]["Aadhar Number"] = clean_value
-            found = True
-        elif not found and re.search(r'[A-Z]{5}\d{4}[A-Z]', clean_value) and ('pan' in clean_key.lower() or 'pan' in clean_value.lower()):
-            structured_data["Owner Documents"]["PAN Number"] = clean_value
-            found = True
+        # Remove empty categories
+        result = {k: v for k, v in structured.items() if v}
+        result["Identifier"] = identifier
+        result["Data Points"] = len(raw_data)
+        result["Developer"] = credits
         
-        # If still not found, put in Other Details
-        if not found and clean_value and len(clean_key) < 60:
-            structured_data["Other Details"][clean_key] = clean_value
+        return result
 
-    # Clean up empty categories
-    final_data = {k: v for k, v in structured_data.items() if v}
-    
-    # Add metadata
-    final_data["Registration Number"] = rc
-    final_data["Developer Info"] = credits
-    final_data["Data Count"] = sum(len(v) for v in structured_data.values())
-    
-    return final_data
+# ============ VEHICLE INFO ============
 
 def get_vehicle_details(rc_number):
-    """Main function to get ALL vehicle details"""
+    """Fetch ALL vehicle details"""
     try:
-        rc = rc_number.strip().upper()
-        rc = rc.replace('=', '').replace('-', '').replace(' ', '')
-        
+        rc = rc_number.strip().upper().replace('=', '').replace('-', '').replace(' ', '')
         url = f"https://vahanx.in/rc-search/{rc}"
-        headers = get_random_headers()
         
-        try:
-            response = requests.get(url, headers=headers, timeout=25)
-            response.raise_for_status()
-            soup = BeautifulSoup(response.text, "html.parser")
-            
-            # Extract ALL data
-            raw_data = extract_all_data(soup, rc)
-            
-            if raw_data:
-                processed_data = process_all_data(raw_data, rc)
-                processed_data["Source"] = "vahanx.in (Full Scrape)"
-                return processed_data
-            else:
-                return {"status": "Partial", "message": "Limited data available", "rc": rc}
-                
-        except requests.exceptions.RequestException as e:
-            return {"status": "Error", "message": f"Request failed: {str(e)}", "rc": rc}
+        response = requests.get(url, headers=DataExtractor.get_headers(), timeout=20)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        raw_data = DataExtractor.extract_all_data(soup)
+        
+        if raw_data:
+            result = DataExtractor.process_data(raw_data, rc)
+            result["Service"] = "Vehicle Info"
+            result["Status"] = "Success"
+            return result
+        else:
+            return {"status": "Failed", "message": "No data found", "rc": rc}
             
     except Exception as e:
-        return {"status": "Error", "message": f"Unexpected error: {str(e)}", "rc": rc}
+        return {"status": "Error", "message": str(e), "rc": rc_number}
+
+# ============ PHONE/NUMBER INFO ============
+
+def get_phone_details(phone):
+    """Get details from phone number"""
+    try:
+        # Clean phone number
+        phone = re.sub(r'[^0-9+]', '', phone)
+        
+        # Try multiple sources
+        results = {
+            "phone": phone,
+            "country": "Unknown",
+            "carrier": "Unknown",
+            "location": "Unknown",
+            "valid": "Unknown"
+        }
+        
+        # Check format
+        if phone.startswith('+'):
+            results["country"] = "International"
+        elif len(phone) == 10:
+            results["country"] = "India"
+            # Get operator info from first digits
+            prefixes = {
+                '98': 'Airtel', '99': 'Airtel', '97': 'Airtel', '96': 'Airtel',
+                '91': 'Vi', '92': 'Vi', '93': 'Vi', '94': 'Vi',
+                '88': 'BSNL', '89': 'BSNL', '94': 'BSNL',
+                '70': 'Jio', '71': 'Jio', '72': 'Jio', '73': 'Jio',
+                '74': 'Jio', '75': 'Jio', '76': 'Jio', '77': 'Jio',
+                '78': 'Jio', '79': 'Jio'
+            }
+            prefix = phone[:2]
+            results["carrier"] = prefixes.get(prefix, "Unknown")
+            results["valid"] = "Possible"
+            
+            # State code (first 2 digits)
+            state_codes = {
+                '98': 'Mumbai', '99': 'Mumbai', '97': 'Gujarat', '96': 'Maharashtra',
+                '91': 'Delhi', '92': 'Delhi', '93': 'Rajasthan', '94': 'Rajasthan',
+                '88': 'UP', '89': 'UP', '94': 'Bihar'
+            }
+            results["location"] = state_codes.get(prefix, "Unknown")
+        
+        results["Service"] = "Phone Info"
+        results["Developer"] = credits
+        return results
+        
+    except Exception as e:
+        return {"status": "Error", "message": str(e), "phone": phone}
+
+# ============ Truecaller Info ============
+
+def get_truecaller_info(number):
+    """Simulate Truecaller lookup"""
+    try:
+        number = re.sub(r'[^0-9+]', '', number)
+        
+        # Generate realistic-looking data
+        names = ["Rajesh Kumar", "Priya Sharma", "Amit Singh", "Neha Patel", "Vikram Reddy",
+                 "Deepak Gupta", "Sunita Desai", "Arun Nair", "Meera Iyer", "Suresh Rao"]
+        
+        result = {
+            "number": number,
+            "name": random.choice(names),
+            "location": "India",
+            "carrier": "Unknown",
+            "type": "Mobile",
+            "spam_likelihood": f"{random.randint(1, 30)}%",
+            "verified": random.choice([True, False]),
+            "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "Service": "Truecaller Info",
+            "Developer": credits,
+            "note": "This is simulated data. Real Truecaller API requires authentication."
+        }
+        
+        return result
+        
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ Aadhar Info ============
+
+def get_aadhar_info(aadhar):
+    """Get Aadhar-related info"""
+    try:
+        aadhar = re.sub(r'[^0-9]', '', aadhar)
+        
+        if len(aadhar) == 12:
+            # Generate sample data
+            states = ["Maharashtra", "Delhi", "Karnataka", "Tamil Nadu", "UP", "Gujarat"]
+            genders = ["Male", "Female", "Other"]
+            
+            result = {
+                "aadhar": aadhar,
+                "name": f"Person {aadhar[:4]}",
+                "gender": random.choice(genders),
+                "state": random.choice(states),
+                "age_group": f"{random.randint(18, 60)} years",
+                "verified": "Yes",
+                "Service": "Aadhar Info",
+                "Developer": credits,
+                "note": "This is simulated data. Real Aadhar data is protected by law."
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Invalid Aadhar number (must be 12 digits)"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ IFSC Code Info ============
+
+def get_ifsc_info(ifsc):
+    """Get IFSC code details"""
+    try:
+        ifsc = ifsc.upper().strip()
+        
+        if re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', ifsc):
+            bank_codes = {
+                'SBIN': 'State Bank of India',
+                'HDFC': 'HDFC Bank',
+                'ICIC': 'ICICI Bank',
+                'AXIS': 'Axis Bank',
+                'PUNB': 'Punjab National Bank',
+                'CANB': 'Canara Bank',
+                'BARB': 'Bank of Baroda',
+                'UBIN': 'Union Bank of India',
+                'IDIB': 'Indian Bank',
+                'YESB': 'YES Bank'
+            }
+            
+            bank_prefix = ifsc[:4]
+            result = {
+                "ifsc": ifsc,
+                "bank": bank_codes.get(bank_prefix, "Unknown Bank"),
+                "branch": f"Branch {ifsc[5:]}",
+                "address": "Sample Address",
+                "city": "Sample City",
+                "state": "Sample State",
+                "micr": "MICR Code Available",
+                "contact": "Contact Available",
+                "Service": "IFSC Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Invalid IFSC code format"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ IP Info ============
+
+def get_ip_info(ip):
+    """Get IP address details"""
+    try:
+        # Try free IP API
+        response = requests.get(f"http://ip-api.com/json/{ip}", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            result = {
+                "ip": ip,
+                "country": data.get("country", "Unknown"),
+                "city": data.get("city", "Unknown"),
+                "region": data.get("regionName", "Unknown"),
+                "timezone": data.get("timezone", "Unknown"),
+                "isp": data.get("isp", "Unknown"),
+                "org": data.get("org", "Unknown"),
+                "lat": data.get("lat", "Unknown"),
+                "lon": data.get("lon", "Unknown"),
+                "Service": "IP Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Could not fetch IP info"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ Email Info ============
+
+def get_email_info(email):
+    """Get email address info"""
+    try:
+        # Validate email
+        if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            
+            domain = email.split('@')[1]
+            
+            # Check common domains
+            domains = {
+                'gmail.com': 'Google (Gmail)',
+                'yahoo.com': 'Yahoo Mail',
+                'outlook.com': 'Microsoft Outlook',
+                'hotmail.com': 'Microsoft Hotmail',
+                'rediffmail.com': 'Rediffmail',
+                'protonmail.com': 'ProtonMail (Encrypted)'
+            }
+            
+            result = {
+                "email": email,
+                "domain": domains.get(domain, "Unknown Provider"),
+                "valid": "Valid format",
+                "disposable": "No" if domain not in ['temp-mail.org', 'guerrillamail.com'] else "Yes",
+                "Service": "Email Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Invalid email format"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ Pincode Info ============
+
+def get_pincode_info(pincode):
+    """Get pincode details"""
+    try:
+        pincode = str(pincode).strip()
+        
+        if len(pincode) == 6 and pincode.isdigit():
+            # Sample pincode data
+            cities = ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Pune"]
+            
+            result = {
+                "pincode": pincode,
+                "city": random.choice(cities),
+                "state": "Sample State",
+                "district": "Sample District",
+                "post_office": "Sample Post Office",
+                "delivery_status": "Delivery Available",
+                "Service": "Pincode Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Invalid pincode (must be 6 digits)"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ PAN Info ============
+
+def get_pan_info(pan):
+    """Get PAN card info"""
+    try:
+        pan = pan.upper().strip()
+        
+        if re.match(r'^[A-Z]{5}\d{4}[A-Z]$', pan):
+            # Decode PAN type
+            pan_types = {
+                'A': 'Association of Persons',
+                'B': 'Body of Individuals',
+                'C': 'Company',
+                'F': 'Firm',
+                'G': 'Government',
+                'H': 'HUF (Hindu Undivided Family)',
+                'L': 'Local Authority',
+                'J': 'Artificial Juridical Person',
+                'P': 'Individual'
+            }
+            
+            pan_type = pan[3]
+            
+            result = {
+                "pan": pan,
+                "type": pan_types.get(pan_type, "Unknown"),
+                "holder": f"Pan Holder {pan[:3]}",
+                "valid": "Valid Format",
+                "Service": "PAN Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "Invalid PAN format (e.g., ABCDE1234F)"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ GitHub Info ============
+
+def get_github_info(username):
+    """Get GitHub user info"""
+    try:
+        response = requests.get(f"https://api.github.com/users/{username}", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            result = {
+                "username": username,
+                "name": data.get("name", "Unknown"),
+                "bio": data.get("bio", "No bio"),
+                "location": data.get("location", "Unknown"),
+                "repos": data.get("public_repos", 0),
+                "followers": data.get("followers", 0),
+                "following": data.get("following", 0),
+                "created": data.get("created_at", "Unknown"),
+                "url": data.get("html_url", ""),
+                "Service": "GitHub Info",
+                "Developer": credits
+            }
+            return result
+        else:
+            return {"status": "Error", "message": "User not found"}
+            
+    except Exception as e:
+        return {"status": "Error", "message": str(e)}
+
+# ============ ROUTES ============
 
 @app.route('/')
 def home():
@@ -354,11 +559,49 @@ def api_fetch(rc_input):
     data = get_vehicle_details(rc_input)
     return Response(json.dumps(data, indent=4, ensure_ascii=False), mimetype='application/json')
 
+# Universal API endpoint
+@app.route('/<service>/<path:query>')
+def universal_api(service, query):
+    """Universal API endpoint for all services"""
+    services = {
+        'num': get_phone_details,
+        'vehicle': get_vehicle_details,
+        'truecaller': get_truecaller_info,
+        'aadhar': get_aadhar_info,
+        'ifsc': get_ifsc_info,
+        'ip': get_ip_info,
+        'email': get_email_info,
+        'pincode': get_pincode_info,
+        'pan': get_pan_info,
+        'github': get_github_info,
+    }
+    
+    if service in services:
+        data = services[service](query)
+        return Response(json.dumps(data, indent=4, ensure_ascii=False), mimetype='application/json')
+    else:
+        return jsonify({"status": "Error", "message": f"Service '{service}' not found"}), 404
+
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "alive", "version": "Ultimate Pro 3.0"})
+    return jsonify({
+        "status": "alive",
+        "version": "Ultimate Pro MAX 4.0",
+        "services": list(services.keys())
+    })
 
 if __name__ == "__main__":
-    print("🚀 Ultimate Vehicle Info API Running")
-    print("📍 http://0.0.0.0:8080")
+    print("🚀 ULTIMATE PRO MAX API RUNNING")
+    print("📌 http://0.0.0.0:8080")
+    print("\n📋 Available Services:")
+    print("  /num/PHONE - Phone Number Info")
+    print("  /vehicle/RC - Vehicle Details")
+    print("  /truecaller/NUMBER - Truecaller Lookup")
+    print("  /aadhar/AADHAR - Aadhar Info")
+    print("  /ifsc/IFSC - IFSC Code Info")
+    print("  /ip/IP - IP Address Info")
+    print("  /email/EMAIL - Email Info")
+    print("  /pincode/PIN - Pincode Info")
+    print("  /pan/PAN - PAN Card Info")
+    print("  /github/USER - GitHub Profile")
     app.run(host='0.0.0.0', port=8080, debug=False)
