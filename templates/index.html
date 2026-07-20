@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Vehicle Info Checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            color: #00d4ff;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .logo p {
+            color: #8892b0;
+            margin-top: 8px;
+        }
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+            min-width: 200px;
+            text-transform: uppercase;
+        }
+        .search-box input:focus {
+            border-color: #00d4ff;
+            background: rgba(255,255,255,0.08);
+        }
+        .search-box input::placeholder {
+            color: #64748b;
+            text-transform: none;
+        }
+        .search-box button {
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .search-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(0,212,255,0.4);
+        }
+        .search-box button:active {
+            transform: translateY(0);
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #00d4ff;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader p {
+            color: #8892b0;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+        #result {
+            display: none;
+            margin-top: 20px;
+        }
+        .category {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .category-title {
+            padding: 14px 20px;
+            background: rgba(255,255,255,0.05);
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            gap: 20px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-key {
+            color: #8892b0;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .detail-value {
+            color: #e2e8f0;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: right;
+            word-break: break-word;
+        }
+        .error-message {
+            text-align: center;
+            padding: 30px 20px;
+            color: #f87171;
+            background: rgba(248,113,113,0.1);
+            border-radius: 16px;
+            border: 1px solid rgba(248,113,113,0.2);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #475569;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+        .example-numbers {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .example-numbers span {
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #8892b0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .example-numbers span:hover {
+            background: rgba(0,212,255,0.1);
+            color: #00d4ff;
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            .search-box button { width: 100%; }
+            .detail-row { flex-direction: column; gap: 4px; }
+            .detail-value { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🚗 Vehicle Info Checker</h1>
+            <p>Enter any Indian vehicle number to get complete details</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="vehicleInput" placeholder="Enter RC Number (e.g., DL8CX1234)" autofocus>
+            <button onclick="fetchVehicleDetails()">🔍 Check Now</button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+            <small style="color: #475569;">Try: </small>
+            <div class="example-numbers">
+                <span onclick="setExample('DL8CX1234')">DL8CX1234</span>
+                <span onclick="setExample('MH12DE4321')">MH12DE4321</span>
+                <span onclick="setExample('KA05AB1234')">KA05AB1234</span>
+                <span onclick="setExample('TN02CD5678')">TN02CD5678</span>
+            </div>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Fetching vehicle details...</p>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="footer">
+            Powered by Vehicle Info API • Developer: @NuxoFF & @SHURU_33
+        </div>
+    </div>
+
+    <script>
+        function setExample(number) {
+            document.getElementById('vehicleInput').value = number;
+            fetchVehicleDetails();
+        }
+
+        document.getElementById('vehicleInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchVehicleDetails();
+            }
+        });
+
+        async function fetchVehicleDetails() {
+            const input = document.getElementById('vehicleInput');
+            const rcNumber = input.value.trim().toUpperCase();
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
+
+            if (!rcNumber) {
+                alert('Please enter a vehicle number');
+                return;
+            }
+
+            loader.style.display = 'block';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(`/details=${encodeURIComponent(rcNumber)}`);
+                const data = await response.json();
+
+                loader.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                if (data.error || data.status === 'Failed') {
+                    resultDiv.innerHTML = `
+                        <div class="error-message">
+                            ❌ ${data.message || data.error || 'No details found'}
+                            <br><small style="color: #64748b; margin-top: 8px; display: block;">
+                                Please check the vehicle number and try again
+                            </small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                for (const [category, details] of Object.entries(data)) {
+                    if (category === 'Developer Info') continue;
+                    
+                    if (typeof details === 'object' && Object.keys(details).length > 0) {
+                        html += `<div class="category">
+                            <div class="category-title">${category}</div>`;
+                        
+                        for (const [key, value] of Object.entries(details)) {
+                            if (value) {
+                                html += `
+                                    <div class="detail-row">
+                                        <span class="detail-key">${key}</span>
+                                        <span class="detail-value">${value}</span>
+                                    </div>
+                                `;
+                            }
+                        }
+                        html += `</div>`;
+                    }
+                }
+
+                if (!html) {
+                    html = `<div class="error-message">⚠️ No vehicle details found</div>`;
+                }
+
+                resultDiv.innerHTML = html;
+
+            } catch (error) {
+                loader.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div class="error-message">
+                        ❌ Failed to fetch details
+                        <br><small style="color: #64748b; margin-top: 8px; display: block;">
+                            ${error.message || 'Please try again later'}
+                        </small>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('vehicleInput').focus();
+        });
+    </script>
+</body>
+</html>
