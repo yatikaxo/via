@@ -33,75 +33,184 @@ def get_headers():
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
     }
 
-def extract_data_from_soup(soup):
-    """Extract key-value pairs from vahanx.in style pages"""
-    data = {}
-    # Find all span-p pairs
-    for span in soup.find_all('span'):
-        label = span.get_text(strip=True)
-        if not label or len(label) > 80:
-            continue
-        parent = span.find_parent()
-        if parent:
-            value_tag = parent.find('p') or parent.find('div', class_=re.compile(r'value|data', re.I))
-            if value_tag:
-                value = value_tag.get_text(strip=True)
-                if value:
-                    data[label.replace(':', '').strip()] = value
-    # Also try table rows
-    for table in soup.find_all('table'):
-        for row in table.find_all('tr'):
-            cells = row.find_all(['td', 'th'])
-            if len(cells) >= 2:
-                key = cells[0].get_text(strip=True).replace(':', '').strip()
-                val = cells[1].get_text(strip=True)
-                if key and val:
-                    data[key] = val
-    return data
-
-def categorize_vehicle_data(raw):
-    categories = {
-        "Owner Details": ["Owner Name", "Father's Name", "Address", "City", "State", "Mobile", "Phone", "Email"],
-        "Vehicle Details": ["Model", "Maker", "Fuel Type", "Chassis Number", "Engine Number", "Cubic Capacity", "Seating Capacity", "Color", "Manufacturing Year", "Vehicle Age"],
-        "Registration Details": ["Registration Number", "RTO", "Registration Date", "Status", "Blacklist Status", "Financer"],
-        "Insurance Details": ["Insurance Company", "Insurance Expiry", "Insurance No", "Insurance Status"],
-        "Compliance": ["Fitness Upto", "PUC Upto", "Tax Upto", "Permit Type"]
-    }
-    result = {cat: {} for cat in categories}
-    result["Other"] = {}
-    for key, val in raw.items():
-        found = False
-        for cat, keys in categories.items():
-            if any(k.lower() in key.lower() or key.lower() in k.lower() for k in keys):
-                result[cat][key] = val
-                found = True
-                break
-        if not found:
-            result["Other"][key] = val
-    # Remove empty categories
-    return {k: v for k, v in result.items() if v}
-
-# ============ VEHICLE INFO (Real Scrape) ============
+# ============ VEHICLE INFO (FIXED - Full Data) ============
 def get_vehicle_details(rc):
+    """
+    Fetch complete vehicle details including owner name, mobile, address, etc.
+    Uses multiple methods to extract data from vahanx.in
+    """
     try:
         rc = rc.strip().upper().replace(' ', '').replace('-', '').replace('=', '')
+        
+        # Method 1: Try vahanx.in
         url = f"https://vahanx.in/rc-search/{rc}"
         resp = requests.get(url, headers=get_headers(), timeout=20)
-        resp.raise_for_status()
+        
+        if resp.status_code != 200:
+            return {"status": "Error", "message": "Vehicle not found. Check RC number."}
+        
         soup = BeautifulSoup(resp.text, 'html.parser')
-        raw = extract_data_from_soup(soup)
-        if not raw:
-            return {"status": "Failed", "message": "No data found. Check RC number."}
-        categorized = categorize_vehicle_data(raw)
-        categorized["Registration Number"] = rc
-        categorized["Source"] = "vahanx.in"
-        return categorized
+        
+        # Extract ALL text and find key-value patterns
+        all_text = soup.get_text()
+        
+        # Common patterns for vehicle data
+        patterns = {
+            'Owner Name': r'(?:Owner|Name|ओनर)\s*[:：]\s*([^\n\r,]+)',
+            'Father/Husband Name': r'(?:Father|Husband|पिता|पति)\s*[:：]\s*([^\n\r,]+)',
+            'Mobile': r'(?:Mobile|Phone|मोबाइल|फोन)\s*[:：]\s*([0-9\+\- ]{10,15})',
+            'Phone': r'(?:Phone|फोन)\s*[:：]\s*([0-9\+\- ]{10,15})',
+            'Address': r'(?:Address|पता)\s*[:：]\s*([^\n\r,]+)',
+            'City': r'(?:City|शहर)\s*[:：]\s*([^\n\r,]+)',
+            'State': r'(?:State|राज्य)\s*[:：]\s*([^\n\r,]+)',
+            'Pincode': r'(?:Pincode|पिनकोड)\s*[:：]\s*([0-9]{6})',
+            'Registration Number': r'(?:Registration|रजिस्ट्रेशन)\s*[:：]\s*([A-Z0-9]+)',
+            'RTO': r'(?:RTO)\s*[:：]\s*([^\n\r,]+)',
+            'Registration Date': r'(?:Reg\.? Date|Registration Date|रजि\. तिथि)\s*[:：]\s*([0-9\-/]+)',
+            'Model': r'(?:Model|मॉडल)\s*[:：]\s*([^\n\r,]+)',
+            'Maker': r'(?:Maker|Make|निर्माता)\s*[:：]\s*([^\n\r,]+)',
+            'Fuel Type': r'(?:Fuel|ईंधन)\s*[:：]\s*([^\n\r,]+)',
+            'Chassis Number': r'(?:Chassis|चेसिस)\s*[:：]\s*([A-Z0-9]+)',
+            'Engine Number': r'(?:Engine|इंजन)\s*[:：]\s*([A-Z0-9]+)',
+            'Color': r'(?:Color|रंग)\s*[:：]\s*([^\n\r,]+)',
+            'Manufacturing Year': r'(?:Manufacturing|Year|निर्माण वर्ष)\s*[:：]\s*([0-9]{4})',
+            'Insurance Company': r'(?:Insurance|बीमा)\s*[:：]\s*([^\n\r,]+)',
+            'Insurance Expiry': r'(?:Insurance Expiry|बीमा समाप्ति)\s*[:：]\s*([0-9\-/]+)',
+            'Fitness Upto': r'(?:Fitness|फिटनेस)\s*[:：]\s*([0-9\-/]+)',
+            'PUC Upto': r'(?:PUC)\s*[:：]\s*([0-9\-/]+)',
+            'Tax Upto': r'(?:Tax|टैक्स)\s*[:：]\s*([0-9\-/]+)',
+            'Status': r'(?:Status|स्थिति)\s*[:：]\s*([^\n\r,]+)'
+        }
+        
+        result = {}
+        
+        # Try to find data using regex patterns
+        for key, pattern in patterns.items():
+            match = re.search(pattern, all_text, re.IGNORECASE | re.DOTALL)
+            if match:
+                value = match.group(1).strip()
+                # Clean up value
+                value = re.sub(r'\s+', ' ', value)
+                value = re.sub(r'[^a-zA-Z0-9\s\.\,\-\/\(\)]', '', value)
+                if value and len(value) > 1:
+                    result[key] = value
+        
+        # Method 2: Try to find data from HTML structure
+        if not result or len(result) < 3:
+            # Look for divs with specific classes
+            for div in soup.find_all(['div', 'span', 'p', 'li']):
+                text = div.get_text(strip=True)
+                if ':' in text and len(text) < 200:
+                    parts = text.split(':', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        value = parts[1].strip()
+                        if key and value and len(key) < 50 and len(value) < 200:
+                            # Check if key matches any pattern
+                            for pattern_key in patterns.keys():
+                                if pattern_key.lower() in key.lower() or key.lower() in pattern_key.lower():
+                                    result[pattern_key] = value
+                                    break
+        
+        # Method 3: Extract from table rows
+        for table in soup.find_all('table'):
+            for row in table.find_all('tr'):
+                cells = row.find_all(['td', 'th'])
+                if len(cells) >= 2:
+                    key = cells[0].get_text(strip=True).replace(':', '').strip()
+                    val = cells[1].get_text(strip=True).strip()
+                    if key and val and len(key) < 50 and len(val) < 200:
+                        for pattern_key in patterns.keys():
+                            if pattern_key.lower() in key.lower() or key.lower() in pattern_key.lower():
+                                result[pattern_key] = val
+                                break
+        
+        # If still no data, try alternate source (CarInfo)
+        if not result or len(result) < 2:
+            alt_url = f"https://www.carinfo.app/rc-details/{rc}"
+            try:
+                alt_resp = requests.get(alt_url, headers=get_headers(), timeout=15)
+                if alt_resp.status_code == 200:
+                    alt_soup = BeautifulSoup(alt_resp.text, 'html.parser')
+                    alt_text = alt_soup.get_text()
+                    # Try to extract from alt source
+                    for key, pattern in patterns.items():
+                        if key not in result:
+                            match = re.search(pattern, alt_text, re.IGNORECASE | re.DOTALL)
+                            if match:
+                                value = match.group(1).strip()
+                                value = re.sub(r'\s+', ' ', value)
+                                if value and len(value) > 1:
+                                    result[key] = value
+            except:
+                pass
+        
+        # Clean up and organize result
+        if not result:
+            return {"status": "Failed", "message": "No data found. Check RC number or try again later."}
+        
+        # Add RC number to result
+        result["RC Number"] = rc
+        result["Source"] = "vahanx.in + carinfo.app"
+        
+        # Format mobile numbers properly
+        for key in ['Mobile', 'Phone']:
+            if key in result:
+                # Clean mobile number
+                num = re.sub(r'[^0-9+]', '', result[key])
+                if len(num) >= 10:
+                    result[key] = num[-10:]  # Get last 10 digits
+                elif len(num) == 0:
+                    del result[key]
+        
+        # Organize into categories
+        categories = {
+            "Owner Details": ["Owner Name", "Father/Husband Name", "Mobile", "Phone", "Address", "City", "State", "Pincode"],
+            "Vehicle Details": ["Model", "Maker", "Fuel Type", "Chassis Number", "Engine Number", "Color", "Manufacturing Year"],
+            "Registration": ["Registration Number", "RTO", "Registration Date", "Status"],
+            "Insurance": ["Insurance Company", "Insurance Expiry"],
+            "Compliance": ["Fitness Upto", "PUC Upto", "Tax Upto"]
+        }
+        
+        final_result = {}
+        for cat, keys in categories.items():
+            cat_data = {}
+            for key in keys:
+                if key in result:
+                    cat_data[key] = result[key]
+            if cat_data:
+                final_result[cat] = cat_data
+        
+        # Add any remaining data
+        other_data = {}
+        for key, value in result.items():
+            found = False
+            for cat, keys in categories.items():
+                if key in keys:
+                    found = True
+                    break
+            if not found and key not in ['RC Number', 'Source']:
+                other_data[key] = value
+        
+        if other_data:
+            final_result["Other Details"] = other_data
+        
+        final_result["Metadata"] = {
+            "RC Number": rc,
+            "Source": "vahanx.in + carinfo.app",
+            "Timestamp": datetime.now().isoformat()
+        }
+        
+        return final_result
+        
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ PHONE INFO (Real via free API) ============
+# ============ PHONE INFO ============
 def get_phone_details(number):
     try:
         number = re.sub(r'[^0-9+]', '', number).strip()
@@ -132,7 +241,7 @@ def get_phone_details(number):
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ IFSC INFO (Real via RBI API) ============
+# ============ IFSC INFO ============
 def get_ifsc_info(ifsc):
     try:
         ifsc = ifsc.upper().strip()
@@ -158,7 +267,7 @@ def get_ifsc_info(ifsc):
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ IP INFO (Real) ============
+# ============ IP INFO ============
 def get_ip_info(ip):
     try:
         resp = requests.get(f"http://ip-api.com/json/{ip}", timeout=10)
@@ -181,7 +290,7 @@ def get_ip_info(ip):
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ EMAIL INFO (Validation) ============
+# ============ EMAIL INFO ============
 def get_email_info(email):
     try:
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
@@ -205,7 +314,7 @@ def get_email_info(email):
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ PINCODE INFO (Real via API) ============
+# ============ PINCODE INFO ============
 def get_pincode_info(pincode):
     try:
         pincode = str(pincode).strip()
@@ -230,7 +339,7 @@ def get_pincode_info(pincode):
     except Exception as e:
         return {"status": "Error", "message": str(e)}
 
-# ============ GITHUB INFO (Real) ============
+# ============ GITHUB INFO ============
 def get_github_info(username):
     try:
         url = f"https://api.github.com/users/{username}"
@@ -347,7 +456,6 @@ def bgmi_route(query):
 def ping():
     return jsonify({"status": "alive", "services": 15})
 
-# ============ FIX: PORT for Render ============
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
