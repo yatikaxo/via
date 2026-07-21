@@ -12,42 +12,14 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 30px 0 20px;
-        }
-        .header h1 {
-            color: #00d4ff;
-            font-size: 42px;
-            font-weight: 700;
-            text-shadow: 0 0 30px rgba(0,212,255,0.3);
-        }
-        .header p {
-            color: #8892b0;
-            font-size: 16px;
-            margin-top: 8px;
-        }
-        .header .badge {
-            display: inline-block;
-            background: rgba(0,212,255,0.15);
-            color: #00d4ff;
-            padding: 4px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-top: 10px;
-            border: 1px solid rgba(0,212,255,0.2);
-        }
-        
-        /* Service Grid */
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; padding: 30px 0 20px; }
+        .header h1 { color: #00d4ff; font-size: 42px; font-weight: 700; text-shadow: 0 0 30px rgba(0,212,255,0.3); }
+        .header p { color: #8892b0; font-size: 16px; margin-top: 8px; }
+        .header .badge { display: inline-block; background: rgba(0,212,255,0.15); color: #00d4ff; padding: 4px 16px; border-radius: 20px; font-size: 12px; margin-top: 10px; border: 1px solid rgba(0,212,255,0.2); }
         .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 15px;
             margin: 30px 0;
         }
@@ -55,47 +27,17 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 16px;
-            padding: 20px 15px;
+            padding: 20px 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
-        .service-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255,255,255,0.10);
-            border-color: rgba(0,212,255,0.3);
-            box-shadow: 0 10px 30px -10px rgba(0,212,255,0.2);
-        }
-        .service-card.active {
-            border-color: #00d4ff;
-            background: rgba(0,212,255,0.10);
-            box-shadow: 0 0 30px rgba(0,212,255,0.1);
-        }
-        .service-card .icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .service-card .name {
-            color: #e2e8f0;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .service-card .desc {
-            color: #64748b;
-            font-size: 11px;
-            margin-top: 4px;
-        }
-        .service-card .shortcut {
-            color: #00d4ff;
-            font-size: 11px;
-            font-weight: 600;
-            opacity: 0.7;
-        }
-        
-        /* Search Area */
+        .service-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.10); border-color: rgba(0,212,255,0.3); }
+        .service-card.active { border-color: #00d4ff; background: rgba(0,212,255,0.10); box-shadow: 0 0 30px rgba(0,212,255,0.1); }
+        .service-card .icon { font-size: 32px; display: block; margin-bottom: 6px; }
+        .service-card .name { color: #e2e8f0; font-weight: 600; font-size: 14px; }
+        .service-card .desc { color: #64748b; font-size: 11px; margin-top: 4px; }
+        .service-card .shortcut { color: #00d4ff; font-size: 10px; font-weight: 600; opacity: 0.7; margin-top: 4px; display: block; }
         .search-section {
             background: rgba(255,255,255,0.03);
             border-radius: 20px;
@@ -104,30 +46,11 @@
             margin: 20px 0 30px;
             display: none;
         }
-        .search-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .search-section .service-title {
-            color: #00d4ff;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .search-section .service-desc {
-            color: #8892b0;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        .search-box {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .search-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .search-section .service-title { color: #00d4ff; font-size: 20px; font-weight: 600; }
+        .search-section .service-desc { color: #8892b0; font-size: 14px; margin-bottom: 15px; }
+        .search-box { display: flex; gap: 12px; flex-wrap: wrap; }
         .search-box input {
             flex: 1;
             padding: 14px 18px;
@@ -137,16 +60,10 @@
             color: white;
             font-size: 15px;
             outline: none;
-            transition: all 0.3s;
             min-width: 200px;
         }
-        .search-box input:focus {
-            border-color: #00d4ff;
-            background: rgba(255,255,255,0.08);
-        }
-        .search-box input::placeholder {
-            color: #64748b;
-        }
+        .search-box input:focus { border-color: #00d4ff; background: rgba(255,255,255,0.08); }
+        .search-box input::placeholder { color: #64748b; }
         .search-box button {
             padding: 14px 30px;
             border-radius: 12px;
@@ -159,10 +76,7 @@
             transition: all 0.3s;
             white-space: nowrap;
         }
-        .search-box button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -10px rgba(0,212,255,0.4);
-        }
+        .search-box button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(0,212,255,0.4); }
         .search-box .examples {
             display: flex;
             gap: 6px;
@@ -171,10 +85,7 @@
             width: 100%;
             margin-top: 8px;
         }
-        .search-box .examples span {
-            color: #64748b;
-            font-size: 12px;
-        }
+        .search-box .examples span { color: #64748b; font-size: 12px; }
         .search-box .examples .example-tag {
             background: rgba(255,255,255,0.05);
             padding: 3px 12px;
@@ -184,17 +95,8 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .search-box .examples .example-tag:hover {
-            background: rgba(0,212,255,0.1);
-            color: #00d4ff;
-        }
-        
-        /* Results */
-        .loader {
-            display: none;
-            text-align: center;
-            padding: 30px;
-        }
+        .search-box .examples .example-tag:hover { background: rgba(0,212,255,0.1); color: #00d4ff; }
+        .loader { display: none; text-align: center; padding: 30px; }
         .spinner {
             width: 40px;
             height: 40px;
@@ -204,19 +106,9 @@
             border-top-color: #00d4ff;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader p {
-            color: #8892b0;
-            margin-top: 12px;
-            font-size: 14px;
-        }
-        
-        #result {
-            display: none;
-            margin-top: 20px;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader p { color: #8892b0; margin-top: 12px; font-size: 14px; }
+        #result { display: none; margin-top: 20px; }
         .category {
             background: rgba(255,255,255,0.03);
             border-radius: 16px;
@@ -236,11 +128,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .category-title .count {
-            font-size: 11px;
-            color: #64748b;
-            font-weight: 400;
-        }
+        .category-title .count { font-size: 11px; color: #64748b; font-weight: 400; }
         .detail-row {
             display: flex;
             justify-content: space-between;
@@ -248,22 +136,9 @@
             border-bottom: 1px solid rgba(255,255,255,0.03);
             gap: 20px;
         }
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-        .detail-key {
-            color: #8892b0;
-            font-size: 13px;
-            white-space: nowrap;
-            min-width: 120px;
-        }
-        .detail-value {
-            color: #e2e8f0;
-            font-weight: 500;
-            font-size: 13px;
-            text-align: right;
-            word-break: break-word;
-        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-key { color: #8892b0; font-size: 13px; white-space: nowrap; min-width: 120px; }
+        .detail-value { color: #e2e8f0; font-weight: 500; font-size: 13px; text-align: right; word-break: break-word; }
         .error-message {
             text-align: center;
             padding: 30px 20px;
@@ -272,38 +147,10 @@
             border-radius: 16px;
             border: 1px solid rgba(248,113,113,0.2);
         }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #475569;
-            font-size: 13px;
-            padding: 20px 0;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .footer a {
-            color: #00d4ff;
-            text-decoration: none;
-        }
-        
-        /* Status Badge */
-        .status-badge {
-            display: inline-block;
-            padding: 2px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .status-success {
-            background: rgba(52, 211, 153, 0.15);
-            color: #34d399;
-        }
-        .status-error {
-            background: rgba(248, 113, 113, 0.15);
-            color: #f87171;
-        }
-        
+        .footer { text-align: center; margin-top: 40px; color: #475569; font-size: 13px; padding: 20px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+        .status-badge { display: inline-block; padding: 2px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .status-success { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+        .status-error { background: rgba(248, 113, 113, 0.15); color: #f87171; }
         @media (max-width: 768px) {
             .header h1 { font-size: 28px; }
             .services-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -316,136 +163,118 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <h1>🛡️ Ultimate Info Dashboard</h1>
-            <p>Click any service below to get instant information</p>
-            <span class="badge">🚀 15+ Services Available</span>
+            <p>Click any service below to get instant real data (Indian services)</p>
+            <span class="badge">🚀 15+ Services • Real Data for Vehicle, Phone, IFSC, IP, Email, Pincode, GitHub</span>
         </div>
 
-        <!-- Service Grid -->
         <div class="services-grid" id="serviceGrid">
+            <!-- All services cards with data attributes -->
             <div class="service-card" data-service="vehicle" data-label="RC Number" data-placeholder="e.g., DL8CX1234" data-examples='["DL8CX1234","MH12DE4321","KA05AB1234"]'>
                 <span class="icon">🚗</span>
                 <div class="name">Vehicle Info</div>
                 <div class="desc">RC details, owner, insurance</div>
-                <div class="shortcut">/vehicle</div>
+                <span class="shortcut">/vehicle</span>
             </div>
-            
-            <div class="service-card" data-service="num" data-label="Phone Number" data-placeholder="e.g., 9876543210" data-examples='["9876543210","9876543210"]'>
+            <div class="service-card" data-service="num" data-label="Phone Number" data-placeholder="e.g., 9876543210" data-examples='["9876543210","8765432109"]'>
                 <span class="icon">📱</span>
                 <div class="name">Num Info</div>
-                <div class="desc">Phone number details</div>
-                <div class="shortcut">/num</div>
+                <div class="desc">Phone carrier & location</div>
+                <span class="shortcut">/num</span>
             </div>
-            
             <div class="service-card" data-service="truecaller" data-label="Phone Number" data-placeholder="e.g., 9876543210" data-examples='["9876543210"]'>
                 <span class="icon">📠</span>
-                <div class="name">Truecaller Info</div>
-                <div class="desc">Caller ID & spam lookup</div>
-                <div class="shortcut">/truecaller</div>
+                <div class="name">Truecaller</div>
+                <div class="desc">Caller ID (demo)</div>
+                <span class="shortcut">/truecaller</span>
             </div>
-            
             <div class="service-card" data-service="aadhar" data-label="Aadhar Number" data-placeholder="e.g., 123412341234" data-examples='["123412341234"]'>
                 <span class="icon">🪪</span>
                 <div class="name">Aadhar Info</div>
-                <div class="desc">Aadhar card details</div>
-                <div class="shortcut">/aadhar</div>
+                <div class="desc">Aadhar details (demo)</div>
+                <span class="shortcut">/aadhar</span>
             </div>
-            
             <div class="service-card" data-service="pan" data-label="PAN Number" data-placeholder="e.g., ABCDE1234F" data-examples='["ABCDE1234F"]'>
                 <span class="icon">📰</span>
                 <div class="name">PAN Info</div>
-                <div class="desc">PAN card details</div>
-                <div class="shortcut">/pan</div>
+                <div class="desc">PAN details (demo)</div>
+                <span class="shortcut">/pan</span>
             </div>
-            
             <div class="service-card" data-service="ifsc" data-label="IFSC Code" data-placeholder="e.g., SBIN0001234" data-examples='["SBIN0001234","HDFC0000123"]'>
                 <span class="icon">🏦</span>
                 <div class="name">IFSC Info</div>
                 <div class="desc">Bank branch details</div>
-                <div class="shortcut">/ifsc</div>
+                <span class="shortcut">/ifsc</span>
             </div>
-            
             <div class="service-card" data-service="ip" data-label="IP Address" data-placeholder="e.g., 8.8.8.8" data-examples='["8.8.8.8","1.1.1.1"]'>
                 <span class="icon">🌐</span>
                 <div class="name">IP Info</div>
                 <div class="desc">IP location & ISP</div>
-                <div class="shortcut">/ip</div>
+                <span class="shortcut">/ip</span>
             </div>
-            
             <div class="service-card" data-service="email" data-label="Email Address" data-placeholder="e.g., user@domain.com" data-examples='["user@gmail.com","test@yahoo.com"]'>
                 <span class="icon">📧</span>
                 <div class="name">Email Info</div>
                 <div class="desc">Email validation & domain</div>
-                <div class="shortcut">/email</div>
+                <span class="shortcut">/email</span>
             </div>
-            
             <div class="service-card" data-service="pincode" data-label="Pincode" data-placeholder="e.g., 110001" data-examples='["110001","400001"]'>
                 <span class="icon">📍</span>
                 <div class="name">Pincode Info</div>
                 <div class="desc">Postal code details</div>
-                <div class="shortcut">/pincode</div>
+                <span class="shortcut">/pincode</span>
             </div>
-            
             <div class="service-card" data-service="github" data-label="GitHub Username" data-placeholder="e.g., username" data-examples='["torvalds","google"]'>
                 <span class="icon">🐙</span>
                 <div class="name">GitHub Info</div>
-                <div class="desc">GitHub profile details</div>
-                <div class="shortcut">/github</div>
+                <div class="desc">GitHub profile</div>
+                <span class="shortcut">/github</span>
             </div>
-            
             <div class="service-card" data-service="ff" data-label="FreeFire UID" data-placeholder="e.g., 123456789" data-examples='["123456789"]'>
                 <span class="icon">🎮</span>
                 <div class="name">FF Info</div>
-                <div class="desc">FreeFire player stats</div>
-                <div class="shortcut">/ff</div>
+                <div class="desc">FreeFire stats (demo)</div>
+                <span class="shortcut">/ff</span>
             </div>
-            
             <div class="service-card" data-service="numvl" data-label="Number" data-placeholder="e.g., 9876543210" data-examples='["9876543210"]'>
                 <span class="icon">📊</span>
                 <div class="name">Numvl Info</div>
-                <div class="desc">Number validation</div>
-                <div class="shortcut">/numvl</div>
+                <div class="desc">Number validation (demo)</div>
+                <span class="shortcut">/numvl</span>
             </div>
-            
             <div class="service-card" data-service="family" data-label="Family Member" data-placeholder="e.g., Name" data-examples='["Rahul"]'>
                 <span class="icon">👨‍👩‍👧‍👦</span>
                 <div class="name">Family Info</div>
-                <div class="desc">Family details lookup</div>
-                <div class="shortcut">/family</div>
+                <div class="desc">Family details (demo)</div>
+                <span class="shortcut">/family</span>
             </div>
-            
             <div class="service-card" data-service="insta" data-label="Instagram ID" data-placeholder="e.g., username" data-examples='["instagram"]'>
                 <span class="icon">📸</span>
                 <div class="name">Insta Info</div>
-                <div class="desc">Instagram profile</div>
-                <div class="shortcut">/insta</div>
+                <div class="desc">Instagram profile (demo)</div>
+                <span class="shortcut">/insta</span>
             </div>
-            
             <div class="service-card" data-service="tg" data-label="Telegram ID" data-placeholder="e.g., @username" data-examples='["@telegram"]'>
                 <span class="icon">📨</span>
                 <div class="name">TG Info</div>
-                <div class="desc">Telegram details</div>
-                <div class="shortcut">/tg</div>
+                <div class="desc">Telegram (demo)</div>
+                <span class="shortcut">/tg</span>
             </div>
-            
             <div class="service-card" data-service="pak" data-label="Pakistan ID" data-placeholder="e.g., 12345" data-examples='["12345"]'>
                 <span class="icon">🇵🇰</span>
                 <div class="name">Pak Info</div>
-                <div class="desc">Pakistan info lookup</div>
-                <div class="shortcut">/pak</div>
+                <div class="desc">Pakistan info (demo)</div>
+                <span class="shortcut">/pak</span>
             </div>
-            
             <div class="service-card" data-service="bgmi" data-label="BGMI ID" data-placeholder="e.g., 123456789" data-examples='["123456789"]'>
                 <span class="icon">🎯</span>
                 <div class="name">BGMI Info</div>
-                <div class="desc">BGMI player stats</div>
-                <div class="shortcut">/bgmi</div>
+                <div class="desc">BGMI stats (demo)</div>
+                <span class="shortcut">/bgmi</span>
             </div>
         </div>
 
-        <!-- Search Section -->
         <div class="search-section" id="searchSection">
             <div class="service-title" id="serviceTitle">🚗 Vehicle Info</div>
             <div class="service-desc" id="serviceDesc">Enter RC number to get complete vehicle details</div>
@@ -458,23 +287,20 @@
             </div>
         </div>
 
-        <!-- Loader -->
         <div class="loader" id="loader">
             <div class="spinner"></div>
             <p>Fetching data...</p>
         </div>
 
-        <!-- Results -->
         <div id="result"></div>
 
-        <!-- Footer -->
         <div class="footer">
-            Powered by Ultimate Info API • Developer: N.S • 🚀 All-in-One Dashboard
+            Powered by Ultimate Info API • Developer: N.S • 🇮🇳 Made for India
         </div>
     </div>
 
     <script>
-        // ============ SERVICE CONFIGURATION ============
+        // Service configuration (must match backend routes)
         const serviceConfig = {
             vehicle: { 
                 icon: '🚗', name: 'Vehicle Info', endpoint: '/vehicle', 
@@ -485,26 +311,26 @@
             num: { 
                 icon: '📱', name: 'Num Info', endpoint: '/num',
                 placeholder: 'Enter Phone Number (e.g., 9876543210)',
-                examples: ['9876543210', '9876543210'],
-                desc: 'Phone number carrier, location, and validity'
+                examples: ['9876543210', '8765432109'],
+                desc: 'Phone carrier, location, and validity'
             },
             truecaller: { 
                 icon: '📠', name: 'Truecaller Info', endpoint: '/truecaller',
                 placeholder: 'Enter Phone Number (e.g., 9876543210)',
                 examples: ['9876543210'],
-                desc: 'Caller ID, name, and spam likelihood'
+                desc: 'Caller ID and spam likelihood (demo)'
             },
             aadhar: { 
                 icon: '🪪', name: 'Aadhar Info', endpoint: '/aadhar',
                 placeholder: 'Enter 12-digit Aadhar Number',
                 examples: ['123412341234'],
-                desc: 'Aadhar card holder details (simulated for demo)'
+                desc: 'Aadhar card holder details (demo)'
             },
             pan: { 
                 icon: '📰', name: 'PAN Info', endpoint: '/pan',
                 placeholder: 'Enter PAN (e.g., ABCDE1234F)',
                 examples: ['ABCDE1234F'],
-                desc: 'PAN card holder details (simulated for demo)'
+                desc: 'PAN card holder details (demo)'
             },
             ifsc: { 
                 icon: '🏦', name: 'IFSC Info', endpoint: '/ifsc',
@@ -540,50 +366,50 @@
                 icon: '🎮', name: 'FF Info', endpoint: '/ff',
                 placeholder: 'Enter FreeFire UID',
                 examples: ['123456789'],
-                desc: 'FreeFire player stats and rank'
+                desc: 'FreeFire player stats (demo)'
             },
             numvl: { 
                 icon: '📊', name: 'Numvl Info', endpoint: '/numvl',
                 placeholder: 'Enter Number',
                 examples: ['9876543210'],
-                desc: 'Number validation and carrier info'
+                desc: 'Number validation (demo)'
             },
             family: { 
                 icon: '👨‍👩‍👧‍👦', name: 'Family Info', endpoint: '/family',
                 placeholder: 'Enter Member Name',
                 examples: ['Rahul', 'Priya'],
-                desc: 'Family details lookup (simulated)'
+                desc: 'Family details lookup (demo)'
             },
             insta: { 
                 icon: '📸', name: 'Insta Info', endpoint: '/insta',
                 placeholder: 'Enter Instagram ID',
                 examples: ['instagram', 'natgeo'],
-                desc: 'Instagram profile details'
+                desc: 'Instagram profile details (demo)'
             },
             tg: { 
                 icon: '📨', name: 'TG Info', endpoint: '/tg',
                 placeholder: 'Enter Telegram ID (e.g., @username)',
                 examples: ['@telegram'],
-                desc: 'Telegram profile details'
+                desc: 'Telegram profile details (demo)'
             },
             pak: { 
                 icon: '🇵🇰', name: 'Pak Info', endpoint: '/pak',
                 placeholder: 'Enter Pakistan ID',
                 examples: ['12345'],
-                desc: 'Pakistan info lookup'
+                desc: 'Pakistan info lookup (demo)'
             },
             bgmi: { 
                 icon: '🎯', name: 'BGMI Info', endpoint: '/bgmi',
                 placeholder: 'Enter BGMI ID',
                 examples: ['123456789'],
-                desc: 'BGMI player stats and rank'
+                desc: 'BGMI player stats (demo)'
             }
         };
 
-        // ============ STATE ============
+        // State
         let currentService = 'vehicle';
 
-        // ============ DOM ELEMENTS ============
+        // DOM refs
         const searchSection = document.getElementById('searchSection');
         const searchInput = document.getElementById('searchInput');
         const serviceTitle = document.getElementById('serviceTitle');
@@ -592,26 +418,19 @@
         const resultDiv = document.getElementById('result');
         const loader = document.getElementById('loader');
 
-        // ============ SERVICE CARD CLICKS ============
+        // Handle card clicks
         document.querySelectorAll('.service-card').forEach(card => {
             card.addEventListener('click', function() {
                 const service = this.dataset.service;
                 if (service && serviceConfig[service]) {
-                    // Update active card
                     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
-                    
-                    // Set current service
                     currentService = service;
-                    
-                    // Update search section
                     const config = serviceConfig[service];
                     serviceTitle.textContent = `${config.icon} ${config.name}`;
                     serviceDesc.textContent = config.desc || `Enter ${config.name.toLowerCase()} details`;
                     searchInput.placeholder = config.placeholder || 'Enter value...';
                     searchInput.value = '';
-                    
-                    // Update examples
                     examplesContainer.innerHTML = '<span>Try:</span>';
                     if (config.examples) {
                         config.examples.forEach(ex => {
@@ -625,8 +444,6 @@
                             examplesContainer.appendChild(tag);
                         });
                     }
-                    
-                    // Show search section
                     searchSection.classList.add('active');
                     resultDiv.style.display = 'none';
                     resultDiv.innerHTML = '';
@@ -635,25 +452,19 @@
             });
         });
 
-        // ============ ENTER KEY ============
+        // Enter key
         searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                fetchServiceData();
-            }
+            if (e.key === 'Enter') fetchServiceData();
         });
 
-        // ============ FETCH DATA ============
+        // Fetch data
         async function fetchServiceData() {
             const query = searchInput.value.trim();
-            if (!query) {
-                alert('Please enter a value to search');
-                return;
-            }
+            if (!query) { alert('Please enter a value to search'); return; }
 
             const config = serviceConfig[currentService];
             if (!config) return;
 
-            // Show loader
             loader.style.display = 'block';
             resultDiv.style.display = 'none';
             resultDiv.innerHTML = '';
@@ -665,7 +476,6 @@
                 loader.style.display = 'none';
                 resultDiv.style.display = 'block';
 
-                // Check for error
                 if (data.error || data.status === 'Error' || data.status === 'Failed') {
                     resultDiv.innerHTML = `
                         <div class="error-message">
@@ -678,11 +488,10 @@
                     return;
                 }
 
-                // Build result HTML
                 let html = '';
                 let totalItems = 0;
 
-                // Show service info
+                // Header
                 html += `
                     <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: rgba(0,212,255,0.05); border-radius: 12px;">
                         <span style="color: #00d4ff; font-weight: 600;">${config.icon} ${config.name}</span>
@@ -691,10 +500,9 @@
                     </div>
                 `;
 
-                // Process data
                 for (const [category, details] of Object.entries(data)) {
-                    if (category === 'Developer' || category === 'Developer Info' || category === 'Service') continue;
-                    if (category === 'Identifier' || category === 'Data Points' || category === 'Status') continue;
+                    if (['Developer', 'Developer Info', 'Service', 'Source', 'status'].includes(category)) continue;
+                    if (['identifier', 'data_points'].includes(category.toLowerCase())) continue;
                     
                     if (typeof details === 'object' && Object.keys(details).length > 0) {
                         const count = Object.keys(details).length;
@@ -704,7 +512,6 @@
                                 ${category.replace(/_/g, ' ')}
                                 <span class="count">${count} items</span>
                             </div>`;
-                        
                         for (const [key, value] of Object.entries(details)) {
                             if (value !== null && value !== undefined && value !== '') {
                                 html += `
@@ -719,18 +526,9 @@
                     }
                 }
 
-                // If no data was shown
                 if (!html) {
-                    html = `
-                        <div class="error-message">
-                            ⚠️ No data found for this query
-                            <br><small style="color: #64748b; margin-top: 8px; display: block;">
-                                ${config.name} data could not be retrieved
-                            </small>
-                        </div>
-                    `;
+                    html = `<div class="error-message">⚠️ No data returned for this query</div>`;
                 } else {
-                    // Add summary
                     html = `
                         <div style="text-align: center; margin-bottom: 15px; color: #64748b; font-size: 13px;">
                             📊 Found ${totalItems} data points
@@ -754,13 +552,10 @@
             }
         }
 
-        // ============ AUTO-SELECT FIRST SERVICE ============
+        // Auto-select first service
         document.addEventListener('DOMContentLoaded', function() {
-            // Trigger click on first service card
             const firstCard = document.querySelector('.service-card');
-            if (firstCard) {
-                firstCard.click();
-            }
+            if (firstCard) firstCard.click();
         });
     </script>
 </body>
