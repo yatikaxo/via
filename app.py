@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Response, render_template, request
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 import requests
 import json
@@ -37,175 +37,219 @@ def get_headers():
         "Pragma": "no-cache"
     }
 
-# ============ VEHICLE INFO (FIXED - Full Data) ============
+def clean_text(text):
+    """Clean extracted text"""
+    if not text:
+        return ""
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'[^\w\s\.\,\-\/\(\)\@\+]', '', text)
+    return text.strip()
+
+def extract_vehicle_data_from_html(html):
+    """Extract vehicle data from any HTML using multiple methods"""
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # Remove script and style tags
+    for script in soup(["script", "style"]):
+        script.decompose()
+    
+    text = soup.get_text()
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    
+    result = {}
+    
+    # Method 1: Find key-value patterns with regex
+    patterns = {
+        'owner_name': r'(?:Owner|Name|ओनर)[\s:：]+([^\n\r,]+)',
+        'father_name': r'(?:Father|Husband|पिता|पति)[\s:：]+([^\n\r,]+)',
+        'mobile': r'(?:Mobile|Phone|Mob|मोबाइल|फोन)[\s:：]+([0-9\+\- ]{10,15})',
+        'phone': r'(?:Phone|फोन)[\s:：]+([0-9\+\- ]{10,15})',
+        'address': r'(?:Address|पता)[\s:：]+([^\n\r,]+)',
+        'city': r'(?:City|शहर)[\s:：]+([^\n\r,]+)',
+        'state': r'(?:State|राज्य)[\s:：]+([^\n\r,]+)',
+        'pincode': r'(?:Pincode|PIN|पिनकोड)[\s:：]+([0-9]{6})',
+        'registration': r'(?:Registration|Reg No|रजिस्ट्रेशन)[\s:：]+([A-Z0-9]+)',
+        'rto': r'(?:RTO)[\s:：]+([^\n\r,]+)',
+        'reg_date': r'(?:Reg\.? Date|Registration Date|रजि\. तिथि)[\s:：]+([0-9\-/]+)',
+        'model': r'(?:Model|मॉडल)[\s:：]+([^\n\r,]+)',
+        'maker': r'(?:Maker|Make|निर्माता)[\s:：]+([^\n\r,]+)',
+        'fuel': r'(?:Fuel|ईंधन)[\s:：]+([^\n\r,]+)',
+        'chassis': r'(?:Chassis|चेसिस)[\s:：]+([A-Z0-9]+)',
+        'engine': r'(?:Engine|इंजन)[\s:：]+([A-Z0-9]+)',
+        'color': r'(?:Color|रंग)[\s:：]+([^\n\r,]+)',
+        'year': r'(?:Manufacturing|Year|निर्माण वर्ष)[\s:：]+([0-9]{4})',
+        'insurance': r'(?:Insurance|बीमा)[\s:：]+([^\n\r,]+)',
+        'insurance_expiry': r'(?:Insurance Expiry|बीमा समाप्ति)[\s:：]+([0-9\-/]+)',
+        'fitness': r'(?:Fitness|फिटनेस)[\s:：]+([0-9\-/]+)',
+        'puc': r'(?:PUC)[\s:：]+([0-9\-/]+)',
+        'tax': r'(?:Tax|टैक्स)[\s:：]+([0-9\-/]+)',
+        'status': r'(?:Status|स्थिति)[\s:：]+([^\n\r,]+)'
+    }
+    
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+        if match:
+            value = clean_text(match.group(1))
+            if value and len(value) > 1:
+                result[key] = value
+    
+    # Method 2: Extract from HTML structure
+    for tag in soup.find_all(['div', 'span', 'p', 'li', 'td']):
+        tag_text = tag.get_text(strip=True)
+        if ':' in tag_text and len(tag_text) < 200:
+            parts = tag_text.split(':', 1)
+            if len(parts) == 2:
+                key = clean_text(parts[0])
+                value = clean_text(parts[1])
+                if key and value and len(key) < 50 and len(value) < 200:
+                    # Map to standard keys
+                    for pattern_key in patterns.keys():
+                        if pattern_key.replace('_', ' ').lower() in key.lower() or key.lower() in pattern_key.replace('_', ' ').lower():
+                            if not result.get(pattern_key) or len(result[pattern_key]) < len(value):
+                                result[pattern_key] = value
+                            break
+    
+    return result
+
+# ============ VEHICLE INFO (FIXED - Multiple Sources) ============
 def get_vehicle_details(rc):
     """
-    Fetch complete vehicle details including owner name, mobile, address, etc.
-    Uses multiple methods to extract data from vahanx.in
+    Fetch vehicle details from multiple sources
     """
     try:
         rc = rc.strip().upper().replace(' ', '').replace('-', '').replace('=', '')
         
-        # Method 1: Try vahanx.in
-        url = f"https://vahanx.in/rc-search/{rc}"
-        resp = requests.get(url, headers=get_headers(), timeout=20)
+        if len(rc) < 6:
+            return {"status": "Error", "message": "Invalid RC number format"}
         
-        if resp.status_code != 200:
-            return {"status": "Error", "message": "Vehicle not found. Check RC number."}
+        all_data = {}
+        sources_used = []
         
-        soup = BeautifulSoup(resp.text, 'html.parser')
+        # Source 1: vahanx.in
+        try:
+            url1 = f"https://vahanx.in/rc-search/{rc}"
+            resp1 = requests.get(url1, headers=get_headers(), timeout=15)
+            if resp1.status_code == 200:
+                data1 = extract_vehicle_data_from_html(resp1.text)
+                if data1:
+                    all_data.update(data1)
+                    sources_used.append("vahanx.in")
+        except:
+            pass
         
-        # Extract ALL text and find key-value patterns
-        all_text = soup.get_text()
+        # Source 2: carinfo.app
+        try:
+            url2 = f"https://www.carinfo.app/rc-details/{rc}"
+            resp2 = requests.get(url2, headers=get_headers(), timeout=15)
+            if resp2.status_code == 200:
+                data2 = extract_vehicle_data_from_html(resp2.text)
+                if data2:
+                    all_data.update(data2)
+                    sources_used.append("carinfo.app")
+        except:
+            pass
         
-        # Common patterns for vehicle data
-        patterns = {
-            'Owner Name': r'(?:Owner|Name|ओनर)\s*[:：]\s*([^\n\r,]+)',
-            'Father/Husband Name': r'(?:Father|Husband|पिता|पति)\s*[:：]\s*([^\n\r,]+)',
-            'Mobile': r'(?:Mobile|Phone|मोबाइल|फोन)\s*[:：]\s*([0-9\+\- ]{10,15})',
-            'Phone': r'(?:Phone|फोन)\s*[:：]\s*([0-9\+\- ]{10,15})',
-            'Address': r'(?:Address|पता)\s*[:：]\s*([^\n\r,]+)',
-            'City': r'(?:City|शहर)\s*[:：]\s*([^\n\r,]+)',
-            'State': r'(?:State|राज्य)\s*[:：]\s*([^\n\r,]+)',
-            'Pincode': r'(?:Pincode|पिनकोड)\s*[:：]\s*([0-9]{6})',
-            'Registration Number': r'(?:Registration|रजिस्ट्रेशन)\s*[:：]\s*([A-Z0-9]+)',
-            'RTO': r'(?:RTO)\s*[:：]\s*([^\n\r,]+)',
-            'Registration Date': r'(?:Reg\.? Date|Registration Date|रजि\. तिथि)\s*[:：]\s*([0-9\-/]+)',
-            'Model': r'(?:Model|मॉडल)\s*[:：]\s*([^\n\r,]+)',
-            'Maker': r'(?:Maker|Make|निर्माता)\s*[:：]\s*([^\n\r,]+)',
-            'Fuel Type': r'(?:Fuel|ईंधन)\s*[:：]\s*([^\n\r,]+)',
-            'Chassis Number': r'(?:Chassis|चेसिस)\s*[:：]\s*([A-Z0-9]+)',
-            'Engine Number': r'(?:Engine|इंजन)\s*[:：]\s*([A-Z0-9]+)',
-            'Color': r'(?:Color|रंग)\s*[:：]\s*([^\n\r,]+)',
-            'Manufacturing Year': r'(?:Manufacturing|Year|निर्माण वर्ष)\s*[:：]\s*([0-9]{4})',
-            'Insurance Company': r'(?:Insurance|बीमा)\s*[:：]\s*([^\n\r,]+)',
-            'Insurance Expiry': r'(?:Insurance Expiry|बीमा समाप्ति)\s*[:：]\s*([0-9\-/]+)',
-            'Fitness Upto': r'(?:Fitness|फिटनेस)\s*[:：]\s*([0-9\-/]+)',
-            'PUC Upto': r'(?:PUC)\s*[:：]\s*([0-9\-/]+)',
-            'Tax Upto': r'(?:Tax|टैक्स)\s*[:：]\s*([0-9\-/]+)',
-            'Status': r'(?:Status|स्थिति)\s*[:：]\s*([^\n\r,]+)'
-        }
+        # Source 3: mParivahan (Govt official - if available)
+        try:
+            # Using a different approach - some RTO data
+            url3 = f"https://www.mparivahan.in/rc-details/{rc}"
+            resp3 = requests.get(url3, headers=get_headers(), timeout=15)
+            if resp3.status_code == 200:
+                data3 = extract_vehicle_data_from_html(resp3.text)
+                if data3:
+                    all_data.update(data3)
+                    sources_used.append("mparivahan.in")
+        except:
+            pass
         
-        result = {}
-        
-        # Try to find data using regex patterns
-        for key, pattern in patterns.items():
-            match = re.search(pattern, all_text, re.IGNORECASE | re.DOTALL)
-            if match:
-                value = match.group(1).strip()
-                # Clean up value
-                value = re.sub(r'\s+', ' ', value)
-                value = re.sub(r'[^a-zA-Z0-9\s\.\,\-\/\(\)]', '', value)
-                if value and len(value) > 1:
-                    result[key] = value
-        
-        # Method 2: Try to find data from HTML structure
-        if not result or len(result) < 3:
-            # Look for divs with specific classes
-            for div in soup.find_all(['div', 'span', 'p', 'li']):
-                text = div.get_text(strip=True)
-                if ':' in text and len(text) < 200:
-                    parts = text.split(':', 1)
-                    if len(parts) == 2:
-                        key = parts[0].strip()
-                        value = parts[1].strip()
-                        if key and value and len(key) < 50 and len(value) < 200:
-                            # Check if key matches any pattern
-                            for pattern_key in patterns.keys():
-                                if pattern_key.lower() in key.lower() or key.lower() in pattern_key.lower():
-                                    result[pattern_key] = value
-                                    break
-        
-        # Method 3: Extract from table rows
-        for table in soup.find_all('table'):
-            for row in table.find_all('tr'):
-                cells = row.find_all(['td', 'th'])
-                if len(cells) >= 2:
-                    key = cells[0].get_text(strip=True).replace(':', '').strip()
-                    val = cells[1].get_text(strip=True).strip()
-                    if key and val and len(key) < 50 and len(val) < 200:
-                        for pattern_key in patterns.keys():
-                            if pattern_key.lower() in key.lower() or key.lower() in pattern_key.lower():
-                                result[pattern_key] = val
-                                break
-        
-        # If still no data, try alternate source (CarInfo)
-        if not result or len(result) < 2:
-            alt_url = f"https://www.carinfo.app/rc-details/{rc}"
-            try:
-                alt_resp = requests.get(alt_url, headers=get_headers(), timeout=15)
-                if alt_resp.status_code == 200:
-                    alt_soup = BeautifulSoup(alt_resp.text, 'html.parser')
-                    alt_text = alt_soup.get_text()
-                    # Try to extract from alt source
-                    for key, pattern in patterns.items():
-                        if key not in result:
-                            match = re.search(pattern, alt_text, re.IGNORECASE | re.DOTALL)
-                            if match:
-                                value = match.group(1).strip()
-                                value = re.sub(r'\s+', ' ', value)
-                                if value and len(value) > 1:
-                                    result[key] = value
-            except:
-                pass
-        
-        # Clean up and organize result
-        if not result:
+        # If no data found
+        if not all_data:
             return {"status": "Failed", "message": "No data found. Check RC number or try again later."}
         
-        # Add RC number to result
-        result["RC Number"] = rc
-        result["Source"] = "vahanx.in + carinfo.app"
+        # Clean and organize the data
+        result = {}
         
-        # Format mobile numbers properly
-        for key in ['Mobile', 'Phone']:
-            if key in result:
-                # Clean mobile number
-                num = re.sub(r'[^0-9+]', '', result[key])
-                if len(num) >= 10:
-                    result[key] = num[-10:]  # Get last 10 digits
-                elif len(num) == 0:
-                    del result[key]
+        # Map extracted data to readable format
+        field_mapping = {
+            'owner_name': 'Owner Name',
+            'father_name': 'Father/Husband Name',
+            'mobile': 'Mobile Number',
+            'phone': 'Phone Number',
+            'address': 'Address',
+            'city': 'City',
+            'state': 'State',
+            'pincode': 'Pincode',
+            'registration': 'Registration Number',
+            'rto': 'RTO Office',
+            'reg_date': 'Registration Date',
+            'model': 'Model',
+            'maker': 'Maker/Manufacturer',
+            'fuel': 'Fuel Type',
+            'chassis': 'Chassis Number',
+            'engine': 'Engine Number',
+            'color': 'Color',
+            'year': 'Manufacturing Year',
+            'insurance': 'Insurance Company',
+            'insurance_expiry': 'Insurance Expiry Date',
+            'fitness': 'Fitness Certificate Upto',
+            'puc': 'PUC Certificate Upto',
+            'tax': 'Tax Upto',
+            'status': 'Vehicle Status'
+        }
         
         # Organize into categories
         categories = {
-            "Owner Details": ["Owner Name", "Father/Husband Name", "Mobile", "Phone", "Address", "City", "State", "Pincode"],
-            "Vehicle Details": ["Model", "Maker", "Fuel Type", "Chassis Number", "Engine Number", "Color", "Manufacturing Year"],
-            "Registration": ["Registration Number", "RTO", "Registration Date", "Status"],
-            "Insurance": ["Insurance Company", "Insurance Expiry"],
-            "Compliance": ["Fitness Upto", "PUC Upto", "Tax Upto"]
+            "👤 Owner Details": ["Owner Name", "Father/Husband Name", "Mobile Number", "Phone Number", "Address", "City", "State", "Pincode"],
+            "🚗 Vehicle Details": ["Registration Number", "RTO Office", "Registration Date", "Model", "Maker/Manufacturer", "Fuel Type", "Chassis Number", "Engine Number", "Color", "Manufacturing Year"],
+            "📋 Insurance & Compliance": ["Insurance Company", "Insurance Expiry Date", "Fitness Certificate Upto", "PUC Certificate Upto", "Tax Upto", "Vehicle Status"]
         }
         
-        final_result = {}
-        for cat, keys in categories.items():
+        for key, value in all_data.items():
+            if key in field_mapping:
+                result[field_mapping[key]] = value
+        
+        # Format mobile numbers
+        for key in ['Mobile Number', 'Phone Number']:
+            if key in result:
+                num = re.sub(r'[^0-9+]', '', result[key])
+                if len(num) >= 10:
+                    result[key] = '+' + num[-10:] if len(num) > 10 else num
+                elif len(num) < 10:
+                    del result[key]
+        
+        # Create categorized output
+        output = {}
+        for category, keys in categories.items():
             cat_data = {}
             for key in keys:
-                if key in result:
+                if key in result and result[key]:
                     cat_data[key] = result[key]
             if cat_data:
-                final_result[cat] = cat_data
+                output[category] = cat_data
         
         # Add any remaining data
-        other_data = {}
+        extra = {}
         for key, value in result.items():
             found = False
-            for cat, keys in categories.items():
+            for category, keys in categories.items():
                 if key in keys:
                     found = True
                     break
-            if not found and key not in ['RC Number', 'Source']:
-                other_data[key] = value
+            if not found:
+                extra[key] = value
         
-        if other_data:
-            final_result["Other Details"] = other_data
+        if extra:
+            output["📌 Additional Info"] = extra
         
-        final_result["Metadata"] = {
+        # Add metadata
+        output["ℹ️ Information"] = {
             "RC Number": rc,
-            "Source": "vahanx.in + carinfo.app",
-            "Timestamp": datetime.now().isoformat()
+            "Sources Used": ", ".join(sources_used),
+            "Timestamp": datetime.now().strftime("%d-%b-%Y %H:%M:%S"),
+            "Status": "Success"
         }
         
-        return final_result
+        return output
         
     except Exception as e:
         return {"status": "Error", "message": str(e)}
