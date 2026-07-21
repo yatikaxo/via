@@ -170,7 +170,6 @@
         </div>
 
         <div class="services-grid" id="serviceGrid">
-            <!-- All services cards with data attributes -->
             <div class="service-card" data-service="vehicle" data-label="RC Number" data-placeholder="e.g., DL8CX1234" data-examples='["DL8CX1234","MH12DE4321","KA05AB1234"]'>
                 <span class="icon">🚗</span>
                 <div class="name">Vehicle Info</div>
@@ -295,12 +294,11 @@
         <div id="result"></div>
 
         <div class="footer">
-            Powered by Ultimate Info API • Developer: N.S • 🇮🇳 Made for India
+            Powered by Ultimate Info API • Developer: N.S • 🇮🇳 Made for India • Research/Educational Purpose Only
         </div>
     </div>
 
     <script>
-        // Service configuration (must match backend routes)
         const serviceConfig = {
             vehicle: { 
                 icon: '🚗', name: 'Vehicle Info', endpoint: '/vehicle', 
@@ -406,10 +404,8 @@
             }
         };
 
-        // State
         let currentService = 'vehicle';
 
-        // DOM refs
         const searchSection = document.getElementById('searchSection');
         const searchInput = document.getElementById('searchInput');
         const serviceTitle = document.getElementById('serviceTitle');
@@ -418,7 +414,6 @@
         const resultDiv = document.getElementById('result');
         const loader = document.getElementById('loader');
 
-        // Handle card clicks
         document.querySelectorAll('.service-card').forEach(card => {
             card.addEventListener('click', function() {
                 const service = this.dataset.service;
@@ -452,12 +447,10 @@
             });
         });
 
-        // Enter key
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') fetchServiceData();
         });
 
-        // Fetch data
         async function fetchServiceData() {
             const query = searchInput.value.trim();
             if (!query) { alert('Please enter a value to search'); return; }
@@ -476,10 +469,10 @@
                 loader.style.display = 'none';
                 resultDiv.style.display = 'block';
 
-                if (data.error || data.status === 'Error' || data.status === 'Failed') {
+                if (data.status === 'error' || data.status === 'Error' || data.status === 'Failed') {
                     resultDiv.innerHTML = `
                         <div class="error-message">
-                            ❌ ${data.message || data.error || 'No data found'}
+                            ❌ ${data.message || 'No data found'}
                             <br><small style="color: #64748b; margin-top: 8px; display: block;">
                                 Please check the input and try again
                             </small>
@@ -491,7 +484,6 @@
                 let html = '';
                 let totalItems = 0;
 
-                // Header
                 html += `
                     <div style="text-align: center; margin-bottom: 20px; padding: 10px; background: rgba(0,212,255,0.05); border-radius: 12px;">
                         <span style="color: #00d4ff; font-weight: 600;">${config.icon} ${config.name}</span>
@@ -501,8 +493,7 @@
                 `;
 
                 for (const [category, details] of Object.entries(data)) {
-                    if (['Developer', 'Developer Info', 'Service', 'Source', 'status'].includes(category)) continue;
-                    if (['identifier', 'data_points'].includes(category.toLowerCase())) continue;
+                    if (category === '_meta' || category === 'status' || category === 'message') continue;
                     
                     if (typeof details === 'object' && Object.keys(details).length > 0) {
                         const count = Object.keys(details).length;
@@ -552,7 +543,6 @@
             }
         }
 
-        // Auto-select first service
         document.addEventListener('DOMContentLoaded', function() {
             const firstCard = document.querySelector('.service-card');
             if (firstCard) firstCard.click();
